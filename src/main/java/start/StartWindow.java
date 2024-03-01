@@ -15,21 +15,15 @@ public class StartWindow extends JFrame {
     private static final String DATA_FILE = "src/main/resources/data.txt";
 
     public StartWindow() {
-        // 화면 그릴 때 필요한 데이터 fetch
-        List<Member> members = DataCache.getInstance().getMembers();
-        int total = members.size();
-        long checkedMembersCount = members.stream().filter(Member::isChecked).count();
-
-        // 화면 그리기
         setTitle("그룹 생성기");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
         setSize(500, 1300);
 
-        JPanel memberCountStatus = paintMemberCountStatusPanel(total, checkedMembersCount);
+        JPanel memberCountStatus = paintMemberCountStatusPanel();
         add(memberCountStatus, BorderLayout.NORTH);
 
-        JScrollPane scrollPane = paintNameListPanel(members);
+        JScrollPane scrollPane = paintNameListPanel();
         add(scrollPane, BorderLayout.WEST);
 
         JPanel rightScreenPanel = new JPanel(new BorderLayout());
@@ -43,20 +37,26 @@ public class StartWindow extends JFrame {
         add(rightScreenPanel, BorderLayout.EAST);
     }
 
-    private static JPanel paintMemberCountStatusPanel(int total, long checkedMembersCount) {
+    private static JPanel paintMemberCountStatusPanel() {
+        List<Member> members = DataCache.getInstance().getMembers();
+        int totalMemberCount = members.size();
+        long checkedMemberCount = members.stream().filter(Member::isChecked).count();
+
         JPanel memberCountStatus = new JPanel();
         memberCountStatus.setLayout(new BoxLayout(memberCountStatus, BoxLayout.Y_AXIS));
         memberCountStatus.setBounds(100, 100, 100, 100);
 
-        JLabel totalCountLabel = new JLabel("총인원 : " + total);
+        JLabel totalCountLabel = new JLabel("총인원 : " + totalMemberCount);
         memberCountStatus.add(totalCountLabel);
 
-        JLabel checkedCountLabel = new JLabel("참여 인원 : " + checkedMembersCount);
+        JLabel checkedCountLabel = new JLabel("참여 인원 : " + checkedMemberCount);
         memberCountStatus.add(checkedCountLabel);
         return memberCountStatus;
     }
 
-    private JScrollPane paintNameListPanel(List<Member> members) {
+    private JScrollPane paintNameListPanel() {
+        List<Member> members = DataCache.getInstance().getMembers();
+
         JPanel nameListPanel = new JPanel();
         nameListPanel.setLayout(new BoxLayout(nameListPanel, BoxLayout.Y_AXIS));
 
