@@ -221,34 +221,6 @@ public class StartWindow extends JFrame {
         }
     }
 
-    private void removeData(String nameToRemove) {
-        try {
-            File inputFile = new File(DATA_FILE);
-            File tempFile = new File("temp.txt");
-
-            BufferedReader reader = new BufferedReader(new FileReader(inputFile));
-            BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile));
-
-            String currentLine;
-
-            while ((currentLine = reader.readLine()) != null) {
-                String[] data = currentLine.split(",");
-                if (data.length == 2) {
-                    String name = data[0];
-                    if (!name.equals(nameToRemove)) {
-                        writer.write(currentLine + System.lineSeparator());
-                    }
-                }
-            }
-            writer.close();
-            reader.close();
-            inputFile.delete();
-            tempFile.renameTo(inputFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
 //    private void loadData() {
 //        try (BufferedReader reader = new BufferedReader(new FileReader(DATA_FILE))) {
 //            String line;
