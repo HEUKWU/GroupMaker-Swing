@@ -1,6 +1,6 @@
 package start;
 
-import start.presentation.DataCache;
+import start.presentation.MemberController;
 import start.state.Member;
 
 import javax.swing.*;
@@ -11,10 +11,13 @@ import java.io.*;
 import java.util.List;
 
 public class StartWindow extends JFrame {
+    private final MemberController memberController;
 
     private static final String DATA_FILE = "src/main/resources/data.txt";
 
-    public StartWindow() {
+    public StartWindow(MemberController memberController) {
+        this.memberController = memberController;
+
         setTitle("그룹 생성기");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
@@ -37,8 +40,8 @@ public class StartWindow extends JFrame {
         add(rightScreenPanel, BorderLayout.EAST);
     }
 
-    private static JPanel paintMemberCountStatusPanel() {
-        List<Member> members = DataCache.getInstance().getMembers();
+    private JPanel paintMemberCountStatusPanel() {
+        List<Member> members = memberController.getMembers();
         int totalMemberCount = members.size();
         long checkedMemberCount = members.stream().filter(Member::isChecked).count();
 
@@ -55,8 +58,7 @@ public class StartWindow extends JFrame {
     }
 
     private JScrollPane paintNameListPanel() {
-        List<Member> members = DataCache.getInstance().getMembers();
-
+        List<Member> members = memberController.getMembers();
         JPanel nameListPanel = new JPanel();
         nameListPanel.setLayout(new BoxLayout(nameListPanel, BoxLayout.Y_AXIS));
 
@@ -87,7 +89,7 @@ public class StartWindow extends JFrame {
         nameListPanel.repaint();
     }
 
-    private static JPanel paintAddMemberAndGroupingPanel() {
+    private JPanel paintAddMemberAndGroupingPanel() {
         JPanel addMemberAndGroupingPanel = new JPanel();
         addMemberAndGroupingPanel.setLayout(new BoxLayout(addMemberAndGroupingPanel, BoxLayout.Y_AXIS));
         addMemberAndGroupingPanel.add(paintAddPersonPanel());
@@ -95,7 +97,7 @@ public class StartWindow extends JFrame {
         return addMemberAndGroupingPanel;
     }
 
-    private static JPanel paintAddPersonPanel() {
+    private JPanel paintAddPersonPanel() {
         JPanel addPersonPanel = new JPanel();
 
         JTextField nameField = new JTextField(15);
@@ -110,7 +112,7 @@ public class StartWindow extends JFrame {
         return addPersonPanel;
     }
 
-    private static JPanel paintCreateGroupPanel() {
+    private JPanel paintCreateGroupPanel() {
         JPanel createGroupPanel = new JPanel();
         JTextField groupCountField = new JTextField(15);
 
