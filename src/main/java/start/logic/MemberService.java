@@ -12,7 +12,7 @@ public class MemberService {
     private static final Logger logger = LoggerFactory.getLogger(MemberService.class);
     private static final String DATA_FILE = "src/main/resources/data.txt";
 
-    public List<Member> readMembers() throws Exception {
+    public List<Member> readMembers() {
         List<Member> members = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(DATA_FILE))) {
             String line;
@@ -30,11 +30,11 @@ public class MemberService {
             return members;
         } catch (Exception e) {
             logger.error("멤버 정보를 읽어오는 데에 에러가 발생했습니다.", e);
-            throw e;
+            throw new RuntimeException(e);
         }
     }
 
-    public void removeData(String nameToRemove) throws IOException {
+    public void removeMember(String nameToRemove) {
         File originalFile = new File(DATA_FILE);
         File tempFile = new File("temp.txt");
         try (
@@ -62,7 +62,7 @@ public class MemberService {
             }
         } catch (IOException e) {
             logger.error("멤버 정보를 삭제하는 데 실패했습니다.", e);
-            throw e;
+            throw new RuntimeException(e);
         }
     }
 }

@@ -16,7 +16,7 @@
 이민성,true
 전범석,false
 김석현,true
-장민호,true
+장민호,false
 김지현,true
 박재윤,false
 박수연,true

@@ -5,7 +5,7 @@ import start.presentation.MemberController;
 import javax.swing.*;
 
 public class Swing_Program {
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         MemberService memberService = new MemberService();
         MemberController memberController = new MemberController(memberService);
 

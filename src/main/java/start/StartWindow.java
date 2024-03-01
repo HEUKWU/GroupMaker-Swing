@@ -26,7 +26,7 @@ public class StartWindow extends JFrame {
         JPanel memberCountStatus = paintMemberCountStatusPanel();
         add(memberCountStatus, BorderLayout.NORTH);
 
-        JScrollPane scrollPane = paintNameListPanel();
+        JScrollPane scrollPane = refreshNameListPanel();
         add(scrollPane, BorderLayout.WEST);
 
         JPanel rightScreenPanel = new JPanel(new BorderLayout());
@@ -57,7 +57,7 @@ public class StartWindow extends JFrame {
         return memberCountStatus;
     }
 
-    private JScrollPane paintNameListPanel() {
+    private JScrollPane refreshNameListPanel() {
         List<Member> members = memberController.getMembers();
         JPanel nameListPanel = new JPanel();
         nameListPanel.setLayout(new BoxLayout(nameListPanel, BoxLayout.Y_AXIS));
@@ -77,7 +77,11 @@ public class StartWindow extends JFrame {
 
             JButton deleteButton = new JButton("삭제");
             deleteButton.addActionListener(e -> {
-                // TODO : 삭제시키는 로직이 들어갈 예정
+                memberController.removeMember(member.name());
+                refreshNameListPanel();
+                invalidate();
+                validate();
+                repaint();
             });
 
             namePanel.add(checkBox);

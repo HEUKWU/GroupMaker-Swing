@@ -7,15 +7,19 @@ import java.util.List;
 
 public class MemberController {
     // 캐싱
-    private final List<Member> members;
+//    private final List<Member> members;
     private final MemberService memberService;
 
-    public MemberController(MemberService memberService) throws Exception {
+    public MemberController(MemberService memberService) {
         this.memberService = memberService;
-        members = memberService.readMembers();
+//        members = memberService.readMembers();
     }
 
     public List<Member> getMembers() {
-        return members;
+        return memberService.readMembers();
+    }
+
+    public void removeMember(String nameToRemove) {
+        memberService.removeMember(nameToRemove);
     }
 }
