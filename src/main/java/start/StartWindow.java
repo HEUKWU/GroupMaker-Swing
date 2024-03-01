@@ -1,15 +1,18 @@
 package start;
 
+import start.logic.event.RefreshWindowEventSource;
 import start.presentation.MemberController;
 import start.state.Member;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.io.*;
 import java.util.List;
 
+// 이벤트를 쓴 부분이 : 화면 리프레시.
+// 이스터에그
+// 버튼 하나 임의로 추가해서 (아무데나) 그거 누르면 빈 화면에 [만든이] 일너 식으로
+// 너 이름이랑 깃허브 아이디, 깃허브 링크만 띡 나오는 화면(새로운 프레임으로)으로 이동시키는 이벤트 추가
 public class StartWindow extends JFrame {
     private final MemberController memberController;
 
@@ -72,16 +75,27 @@ public class StartWindow extends JFrame {
         members.forEach(member -> {
             JPanel namePanel = new JPanel();
 
-            JCheckBox checkBox = new JCheckBox(member.name(), member.isChecked());
-            checkBox.addItemListener(new CheckBoxListener());
+            JCheckBox checkBox = new JCheckBox(member.name(), member.isChecked()); // 이름이랑 체크 여부 추가
+            checkBox.addItemListener(e -> {
+                // TODO : 여기 로직 처리 필요
+                // 체크박스 누르면 리프레시
+                JCheckBox checkBox1 = (JCheckBox) e.getSource();
+                String name = checkBox1.getText();
+                boolean isChecked = checkBox1.isSelected();
+//            if (isChecked) {
+//                checkedCount++;
+//            } else {
+//                checkedCount--;
+//            }
+
+                updateData(name, isChecked); // 컨트롤러로 넘긴다
+                RefreshWindowEventSource.refresh();
+            });
 
             JButton deleteButton = new JButton("삭제");
             deleteButton.addActionListener(e -> {
                 memberController.removeMember(member.name());
-                refreshNameListPanel();
-                invalidate();
-                validate();
-                repaint();
+                RefreshWindowEventSource.refresh();
             });
 
             namePanel.add(checkBox);
@@ -108,6 +122,9 @@ public class StartWindow extends JFrame {
 
         JButton addPersonButton = new JButton("인원 추가");
         addPersonButton.addActionListener(e -> {
+            // TODO : 여기 로직 처리 필요
+            // 이름 입력 받아서 체크 표시하고 파일에 추가 후 파일 갱신
+            // 리프레시
 //            addPersonName(nameListPanel, nameField.getText(), true, true);
         });
 
@@ -122,6 +139,9 @@ public class StartWindow extends JFrame {
 
         JButton createGroupButton = new JButton("그룹 생성");
         createGroupButton.addActionListener(e -> {
+            // TODO : 여기 로직 처리 필요
+            // 리스트에 저장된 이름 무작위로 섞어서 입력받은 개수로 그룹 생성
+            // 만약 이미 그려져있는데 한 번 더 누르면?
 //            readDataFromFile();
         });
         createGroupPanel.add(groupCountField);
@@ -168,23 +188,6 @@ public class StartWindow extends JFrame {
 //
 //        removeData(name);
 //    }
-
-    private class CheckBoxListener implements ItemListener {
-
-        @Override
-        public void itemStateChanged(ItemEvent e) {
-            JCheckBox checkBox = (JCheckBox) e.getSource();
-            String name = checkBox.getText();
-            boolean isChecked = checkBox.isSelected();
-//            if (isChecked) {
-//                checkedCount++;
-//            } else {
-//                checkedCount--;
-//            }
-
-            updateData(name, isChecked);
-        }
-    }
 
     private void updateData(String name, boolean isChecked) {
         try {
