@@ -1,5 +1,8 @@
 package start;
 
+import logic.event.RefreshWindowEventSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import presentation.MemberController;
 import state.Member;
 
@@ -11,22 +14,13 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class StartWindow extends JFrame {
-    private JPanel addPersonPanel;
-    private JPanel nameListPanel;
-    private JTextField nameField;
-    private JButton addPersonButton;
-    private JTextField groupCountField;
-    private JButton createGroupButton;
-    private JPanel createGroupPanel;
-    private JPanel rightTopPanel;
-    private JPanel rightBottomPanel;
-    private JPanel rightPanel;
-    private int totalCount = 0;
-    private int checkedCount = 0;
-    private static final String DATA_FILE = "src/main/resources/data.txt";
+    private final Logger log = LoggerFactory.getLogger(StartWindow.class);
+
     private final MemberController memberController;
+    private static final String DATA_FILE = "src/main/resources/data.txt";
 
     public StartWindow(MemberController memberController) {
         this.memberController = memberController;
@@ -41,52 +35,19 @@ public class StartWindow extends JFrame {
         add(memberCountStatusPanel, BorderLayout.NORTH);
 
         // 인원 목록
-        nameListPanel = new JPanel();
-        nameListPanel.setLayout(new BoxLayout(nameListPanel, BoxLayout.Y_AXIS));
-
-        JScrollPane scrollPane = new JScrollPane(nameListPanel);
-        scrollPane.setVerticalScrollBarPolicy(scrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-
+        JScrollPane scrollPane = refreshNameListPanel(memberController);
         add(scrollPane, BorderLayout.WEST);
 
         // 인원 추가, 그룹 생성 버튼
-        rightPanel = new JPanel(new BorderLayout());
-        add(rightPanel, BorderLayout.EAST);
+        JPanel rightScreenPanel = new JPanel(new BorderLayout());
+        add(rightScreenPanel, BorderLayout.EAST);
 
-        addPersonPanel = new JPanel();
-        nameField = new JTextField(15);
+        JPanel groupListPanel = new JPanel();
+        groupListPanel.setLayout(new BoxLayout(groupListPanel, BoxLayout.Y_AXIS));
+        rightScreenPanel.add(groupListPanel, BorderLayout.NORTH);
 
-        addPersonButton = new JButton("인원 추가");
-        addPersonButton.addActionListener(e -> {
-            addPersonName(nameField.getText(), true, true);
-        });
-
-        rightTopPanel = new JPanel();
-        rightTopPanel.setLayout(new BoxLayout(rightTopPanel, BoxLayout.Y_AXIS));
-        rightPanel.add(rightTopPanel, BorderLayout.NORTH);
-
-        addPersonPanel.add(nameField);
-        addPersonPanel.add(addPersonButton);
-
-        createGroupPanel = new JPanel();
-        groupCountField = new JTextField(15);
-
-        createGroupButton = new JButton("그룹 생성");
-        createGroupButton.addActionListener(e -> {
-            readDataFromFile();
-        });
-        createGroupPanel.add(groupCountField);
-        createGroupPanel.add(createGroupButton);
-
-        rightBottomPanel = new JPanel();
-        rightBottomPanel.setLayout(new BoxLayout(rightBottomPanel, BoxLayout.Y_AXIS));
-
-        rightBottomPanel.add(addPersonPanel);
-        rightBottomPanel.add(createGroupPanel);
-
-        rightPanel.add(rightBottomPanel, BorderLayout.SOUTH);
-
-        loadData(); // 파일에서 데이터 불러오기
+        JPanel addMemberAndGroupingPanel = paintAddMemberAndGroupingPanel(groupListPanel);
+        rightScreenPanel.add(addMemberAndGroupingPanel, BorderLayout.SOUTH);
     }
 
     private JPanel paintMemberCountStatusPanel() {
@@ -107,53 +68,44 @@ public class StartWindow extends JFrame {
         return memberCountStatusPanel;
     }
 
-    private void addPersonName(String name, boolean isChecked, boolean isFirst) {
-        if (name.isEmpty() || name.equals(" ")) {
-            // 예외 처리
-            return;
-        }
+    private JScrollPane refreshNameListPanel(MemberController memberController) {
+        List<Member> members = memberController.getMembers();
 
-        totalCount++;
+        JPanel nameListPanel = new JPanel();
+        nameListPanel.setLayout(new BoxLayout(nameListPanel, BoxLayout.Y_AXIS));
 
-        if (isChecked) {
-            checkedCount++;
-        }
-//        totalCountLabel.setText("총인원 : " + totalCount);
-//        checkedCountLabel.setText("참여인원 : " + checkedCount);
+        JScrollPane scrollPane = new JScrollPane(nameListPanel);
+        scrollPane.setVerticalScrollBarPolicy(scrollPane.VERTICAL_SCROLLBAR_ALWAYS);
 
-        JPanel namePanel = new JPanel();
-        JButton deleteButton = new JButton("삭제");
-        JCheckBox checkBox = new JCheckBox(name, isChecked);
+        members.forEach(member -> {
+            JPanel namePanel = new JPanel();
 
-        checkBox.addItemListener(new CheckBoxListener());
+            JCheckBox checkBox = new JCheckBox(member.name(), member.isChecked());
+            checkBox.addItemListener(new CheckBoxListener());
 
-        namePanel.add(checkBox);
-        namePanel.add(deleteButton);
+            JButton deleteButton = new JButton("삭제");
+            deleteButton.addActionListener(e -> {
+                removeData(member.name());
+            });
 
-        deleteButton.addActionListener(e -> {
-            deleteName(namePanel, checkBox.isSelected(), name);
+            namePanel.add(checkBox);
+            namePanel.add(deleteButton);
+
+            nameListPanel.add(namePanel);
         });
 
-        nameListPanel.add(namePanel);
-        nameListPanel.revalidate();
-        nameListPanel.repaint();
-        nameField.setText("");
-
-        if (isFirst) {
-            saveData(name); // 데이터를 파일에 저장
-        }
+        return scrollPane;
     }
 
-    private void deleteName(JPanel panel, boolean isSelected, String name) {
-        totalCount--;
-        if (isSelected) {
-            checkedCount--;
+    private void addPersonName(String name) {
+        if (name.isEmpty() || name.equals(" ")) {
+            log.error("이름에는 빈문자열이 입력될 수 없습니다.");
+            throw new IllegalArgumentException("이름에는 빈문자열이 입력될 수 없습니다.");
         }
-        nameListPanel.remove(panel);
-        nameListPanel.revalidate();
-        nameListPanel.repaint();
 
-        removeData(name);
+        saveData(name);
+
+        RefreshWindowEventSource.refresh(this);
     }
 
     private class CheckBoxListener implements ItemListener {
@@ -163,17 +115,11 @@ public class StartWindow extends JFrame {
             JCheckBox checkBox = (JCheckBox) e.getSource();
             String name = checkBox.getText();
             boolean isChecked = checkBox.isSelected();
-            if (isChecked) {
-                checkedCount++;
-            } else {
-                checkedCount--;
-            }
-
 
             updateData(name, isChecked);
         }
-    }
 
+    }
     private void updateData(String name, boolean isChecked) {
         try {
             File inputFile = new File(DATA_FILE);
@@ -202,8 +148,11 @@ public class StartWindow extends JFrame {
             reader.close();
             inputFile.delete();
             tempFile.renameTo(inputFile);
+
+            RefreshWindowEventSource.refresh(this);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("파일 갱신에 실패했습니다.");
+            throw new IllegalArgumentException("파일 갱신에 실패했습니다.");
         }
     }
 
@@ -211,7 +160,8 @@ public class StartWindow extends JFrame {
         try (PrintWriter writer = new PrintWriter(new FileWriter(DATA_FILE, true))) {
             writer.println(name + "," + true);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("데이터를 저장하는 데 실패했습니다.");
+            throw new IllegalArgumentException("데이터를 저장하는 데 실패했습니다.");
         }
     }
 
@@ -238,74 +188,86 @@ public class StartWindow extends JFrame {
             reader.close();
             inputFile.delete();
             tempFile.renameTo(inputFile);
+
+            RefreshWindowEventSource.refresh(this);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("파일을 삭제하는 데 실패했습니다.");
+            throw new IllegalArgumentException("파일을 삭제하는 데 실패했습니다.");
         }
     }
 
-    private void loadData() {
-        try (BufferedReader reader = new BufferedReader(new FileReader(DATA_FILE))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] data = line.split(",");
-                if (data.length == 2) {
-                    String name = data[0];
-                    boolean isChecked = Boolean.parseBoolean(data[1]);
-                    addPersonName(name, isChecked, false);
-                }
+    private JPanel paintAddMemberAndGroupingPanel(JPanel groupListPanel) {
+        JPanel addPersonPanel = new JPanel();
+        JTextField nameField = new JTextField(15);
+
+        JButton addPersonButton = new JButton("인원 추가");
+        addPersonButton.addActionListener(e -> {
+            addPersonName(nameField.getText());
+            nameField.setText("");
+        });
+
+        addPersonPanel.add(nameField);
+        addPersonPanel.add(addPersonButton);
+
+        JPanel createGroupPanel = new JPanel();
+        JTextField groupCountField = new JTextField(15);
+
+        JButton createGroupButton = new JButton("그룹 생성");
+        createGroupButton.addActionListener(e -> {
+            int groupCount;
+            List<String> members = memberController.getMembers()
+                    .stream()
+                    .filter(Member::isChecked)
+                    .map(Member::name)
+                    .collect(Collectors.toCollection(ArrayList::new));
+            try {
+                groupCount = Integer.parseInt(groupCountField.getText());
+            } catch (Exception exception) {
+                log.error("올바른 그룹 개수가 입력되지 않았습니다.");
+                throw new IllegalArgumentException("올바른 그룹 개수가 입력되지 않았습니다.");
             }
 
-
-        } catch (IOException | NumberFormatException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void readDataFromFile() {
-        ArrayList<String> names = new ArrayList<>();
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(DATA_FILE))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                // 파일에서 각 줄을 파싱하여 이름과 체크 여부를 가져옵니다.
-                String[] parts = line.split(",");
-                if (parts.length == 2) {
-                    String name = parts[0];
-                    boolean isChecked = Boolean.parseBoolean(parts[1]);
-                    if (isChecked) {
-                        // 체크된 항목인 경우에만 리스트에 추가합니다.
-                        names.add(name);
-                    }
-                }
+            if (groupCount <= 0 || groupCount > members.size()) {
+                log.error("올바른 그룹 개수가 입력되지 않았습니다.");
+                throw new IllegalArgumentException("올바른 그룹 개수가 입력되지 않았습니다.");
             }
 
-            divideGroups(Integer.parseInt(groupCountField.getText()), names);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+            divideGroups(groupListPanel, groupCount, members);
+        });
+
+        createGroupPanel.add(groupCountField);
+        createGroupPanel.add(createGroupButton);
+
+        JPanel rightBottomPanel = new JPanel();
+        rightBottomPanel.setLayout(new BoxLayout(rightBottomPanel, BoxLayout.Y_AXIS));
+
+        rightBottomPanel.add(addPersonPanel);
+        rightBottomPanel.add(createGroupPanel);
+
+        return rightBottomPanel;
     }
 
-    private void divideGroups(int groupCount, ArrayList<String> names) {
-        rightTopPanel.removeAll();
-        rightTopPanel.revalidate();
-        rightTopPanel.repaint();
+    private void divideGroups(JPanel groupListPanel, int groupCount, List<String> members) {
+        groupListPanel.removeAll();
+        groupListPanel.revalidate();
+        groupListPanel.repaint();
 
+        Collections.shuffle(members);
         List<List<String>> groups = new ArrayList<>();
-        Collections.shuffle(names);
         for (int i = 0; i < groupCount; i++) {
             groups.add(new ArrayList<>());
         }
 
         int currentGroup = 0;
-        for (String person : names) {
-            groups.get(currentGroup).add(person);
+        for (String member : members) {
+            groups.get(currentGroup).add(member);
             currentGroup = (currentGroup + 1) % groupCount;
         }
 
         for (int i = 0; i < groups.size(); i++) {
             JList<String> list = new JList<>(groups.get(i).toArray(new String[0]));
-            rightTopPanel.add(new JLabel("그룹" + (i + 1)));
-            rightTopPanel.add(list);
+            groupListPanel.add(new JLabel("그룹" + (i + 1)));
+            groupListPanel.add(list);
         }
     }
 }
