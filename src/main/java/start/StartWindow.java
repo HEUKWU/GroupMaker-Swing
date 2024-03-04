@@ -1,5 +1,8 @@
 package start;
 
+import presentation.MemberController;
+import state.Member;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ItemEvent;
@@ -10,10 +13,6 @@ import java.util.Collections;
 import java.util.List;
 
 public class StartWindow extends JFrame {
-
-    private JPanel status;
-    private JLabel totalCountLabel;
-    private JLabel checkedCountLabel;
     private JPanel addPersonPanel;
     private JPanel nameListPanel;
     private JTextField nameField;
@@ -26,24 +25,20 @@ public class StartWindow extends JFrame {
     private JPanel rightPanel;
     private int totalCount = 0;
     private int checkedCount = 0;
-    private static final String DATA_FILE = "data.txt";
+    private static final String DATA_FILE = "src/main/resources/data.txt";
+    private final MemberController memberController;
 
-    public StartWindow() {
+    public StartWindow(MemberController memberController) {
+        this.memberController = memberController;
+
         setTitle("그룹 생성기");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
         setSize(500, 1300);
 
         // 인원 현황
-        status = new JPanel();
-        status.setLayout(new BoxLayout(status, BoxLayout.Y_AXIS));
-        status.setBounds(100, 100, 100, 100);
-        totalCountLabel = new JLabel("총인원 : " + totalCount);
-        checkedCountLabel = new JLabel("참여 인원 : " + checkedCount);
-        status.add(totalCountLabel);
-        status.add(checkedCountLabel);
-
-        add(status, BorderLayout.NORTH);
+        JPanel memberCountStatusPanel = paintMemberCountStatusPanel();
+        add(memberCountStatusPanel, BorderLayout.NORTH);
 
         // 인원 목록
         nameListPanel = new JPanel();
@@ -94,6 +89,24 @@ public class StartWindow extends JFrame {
         loadData(); // 파일에서 데이터 불러오기
     }
 
+    private JPanel paintMemberCountStatusPanel() {
+        List<Member> members = memberController.getMembers();
+        int totalMemberCount = members.size();
+        long checkedMemberCount = members.stream().filter(Member::isChecked).count();
+
+        JPanel memberCountStatusPanel = new JPanel();
+        memberCountStatusPanel.setLayout(new BoxLayout(memberCountStatusPanel, BoxLayout.Y_AXIS));
+        memberCountStatusPanel.setBounds(100, 100, 100, 100);
+
+        JLabel totalCountLabel = new JLabel("총인원 : " + totalMemberCount);
+        memberCountStatusPanel.add(totalCountLabel);
+
+        JLabel checkedCountLabel = new JLabel("참여 인원 : " + checkedMemberCount);
+        memberCountStatusPanel.add(checkedCountLabel);
+
+        return memberCountStatusPanel;
+    }
+
     private void addPersonName(String name, boolean isChecked, boolean isFirst) {
         if (name.isEmpty() || name.equals(" ")) {
             // 예외 처리
@@ -105,8 +118,8 @@ public class StartWindow extends JFrame {
         if (isChecked) {
             checkedCount++;
         }
-        totalCountLabel.setText("총인원 : " + totalCount);
-        checkedCountLabel.setText("참여인원 : " + checkedCount);
+//        totalCountLabel.setText("총인원 : " + totalCount);
+//        checkedCountLabel.setText("참여인원 : " + checkedCount);
 
         JPanel namePanel = new JPanel();
         JButton deleteButton = new JButton("삭제");
@@ -136,8 +149,6 @@ public class StartWindow extends JFrame {
         if (isSelected) {
             checkedCount--;
         }
-        totalCountLabel.setText("총인원 : " + totalCount);
-        checkedCountLabel.setText("참여인원 : " + checkedCount);
         nameListPanel.remove(panel);
         nameListPanel.revalidate();
         nameListPanel.repaint();
@@ -158,7 +169,6 @@ public class StartWindow extends JFrame {
                 checkedCount--;
             }
 
-            checkedCountLabel.setText("참여인원 : " + checkedCount);
 
             updateData(name, isChecked);
         }
