@@ -1,5 +1,5 @@
 import logic.MemberService;
-import logic.event.RefreshWindowEventSource;
+import logic.event.ProgramEventSource;
 import presentation.MemberController;
 import start.StartWindow;
 
@@ -10,6 +10,12 @@ public class Swing_Program {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new StartWindow(memberController).setVisible(true));
-        RefreshWindowEventSource.addEventListener(() -> new StartWindow(memberController).setVisible(true));
+        ProgramEventSource.addEventListener(() -> new StartWindow(memberController).setVisible(true));
+
+        Thread.setDefaultUncaughtExceptionHandler((t, e) ->
+                JOptionPane.showMessageDialog(null,
+                        e.getMessage(),
+                        "알림",
+                        JOptionPane.ERROR_MESSAGE));
     }
 }
